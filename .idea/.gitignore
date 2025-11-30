@@ -1,0 +1,8 @@
+# 默认忽略的文件
+/../../../../:PandaReach/gdae_sim/.idea/shelf/
+/../../../../:PandaReach/gdae_sim/.idea/workspace.xml
+# 基于编辑器的 HTTP 客户端请求
+/../../../../:PandaReach/gdae_sim/.idea/httpRequests/
+# Datasource local storage ignored files
+/../../../../:PandaReach/gdae_sim/.idea/dataSources/
+/../../../../:PandaReach/gdae_sim/.idea/dataSources.local.xml
