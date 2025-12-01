@@ -96,7 +96,9 @@ class TD3Trainer:
         self.env = RobotSimulator(
             map_size=self.config['map_size'],
             laser_range=self.config['laser_range'],
-            laser_dim=self.config['laser_dim']
+            laser_dim=self.config['laser_dim'],
+            velocity_limits=(0.5, 2.0),
+            time_step=0.1
         )
 
         # 创建 TD3 智能体

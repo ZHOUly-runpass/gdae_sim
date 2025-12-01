@@ -156,7 +156,13 @@ def main():
 
     # 创建环境
     print("\n创建环境...")
-    env = RobotSimulator(map_size=10.0, laser_range=5.0, laser_dim=20)
+    env = RobotSimulator(
+        map_size=10.0,
+        laser_range=5.0,
+        laser_dim=20,
+        velocity_limits=(0.5, 2.0),
+        time_step=0.1
+    )
 
     # 创建智能体
     print("创建 TD3 智能体...")

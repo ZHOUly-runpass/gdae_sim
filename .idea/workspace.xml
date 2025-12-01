@@ -4,20 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e0ef8510-3e3c-4461-af7a-50db7d45d8d6" name="更改" comment="">
-      <change afterPath="D:/PandaReach/gdae_sim/.idea/.gitignore" afterDir="false" />
-      <change afterPath="D:/PandaReach/gdae_sim/.idea/copilot.data.migration.ask.xml" afterDir="false" />
-      <change afterPath="D:/PandaReach/gdae_sim/.idea/copilot.data.migration.ask2agent.xml" afterDir="false" />
-      <change afterPath="D:/PandaReach/gdae_sim/.idea/gdae_sim.iml" afterDir="false" />
-      <change afterPath="D:/PandaReach/gdae_sim/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change afterPath="D:/PandaReach/gdae_sim/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="D:/PandaReach/gdae_sim/.idea/misc.xml" afterDir="false" />
-      <change afterPath="D:/PandaReach/gdae_sim/.idea/modules.xml" afterDir="false" />
-      <change afterPath="D:/PandaReach/gdae_sim/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="D:/PandaReach/gdae_sim/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="D:/PandaReach/gdae_sim/verify_installation.py" afterDir="false" />
-      <change afterPath="D:/PandaReach/gdae_sim/环境(gdae_sim)版本.txt" afterDir="false" />
-    </list>
+    <list default="true" id="e0ef8510-3e3c-4461-af7a-50db7d45d8d6" name="更改" comment="2025.11.30版本" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -60,7 +47,7 @@
     "Python.visualizer.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "master",
-    "last_opened_file_path": "D:/PandaReach/gdae_sim/gdae_td3/src/utils",
+    "last_opened_file_path": "D:/PandaReach/git",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.stylelint": "true",
     "node.js.detected.package.tslint": "true",
@@ -68,7 +55,7 @@
     "node.js.selected.package.stylelint": "",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.keymap",
+    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -212,12 +199,36 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1764418428241</updated>
-      <workItem from="1764418431027" duration="17682000" />
+      <workItem from="1764418431027" duration="20036000" />
     </task>
+    <task id="LOCAL-00001" summary="2025.11.30版本">
+      <option name="closed" value="true" />
+      <created>1764501597161</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1764501597161</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.History.Properties">
+    <option name="COLUMN_ID_ORDER">
+      <list>
+        <option value="Default.Root" />
+        <option value="Default.Author" />
+        <option value="Default.Date" />
+        <option value="Default.Subject" />
+        <option value="GitHub.CommitStatus" />
+      </list>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="2025.11.30版本" />
+    <option name="LAST_COMMIT_MESSAGE" value="2025.11.30版本" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -233,7 +244,7 @@
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/gdae_sim$run_all.coverage" NAME="run_all 覆盖结果" MODIFIED="1764481280799" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="D:/PandaReach/gdae_sim/gdae_td3/tests" />
     <SUITE FILE_PATH="coverage/gdae_sim$.coverage" NAME=" 覆盖结果" MODIFIED="1764491098450" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="D:/PandaReach/gdae_sim/gdae_td3/src/training" />
-    <SUITE FILE_PATH="coverage/gdae_sim$quick_visualize.coverage" NAME="quick_visualize 覆盖结果" MODIFIED="1764501470094" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="D:/PandaReach/gdae_sim/gdae_td3" />
+    <SUITE FILE_PATH="coverage/gdae_sim$quick_visualize.coverage" NAME="quick_visualize 覆盖结果" MODIFIED="1764503666002" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="D:/PandaReach/gdae_sim/gdae_td3" />
     <SUITE FILE_PATH="coverage/gdae_sim$train.coverage" NAME="train 覆盖结果" MODIFIED="1764491069604" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="D:/PandaReach/gdae_sim/gdae_td3" />
     <SUITE FILE_PATH="coverage/gdae_sim$verify_installation.coverage" NAME="verify_installation 覆盖结果" MODIFIED="1764418495216" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="D:/PandaReach/gdae_sim" />
     <SUITE FILE_PATH="coverage/gdae_sim$visualizer.coverage" NAME="visualizer 覆盖结果" MODIFIED="1764500182028" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="D:/PandaReach/gdae_sim/gdae_td3/src/utils" />

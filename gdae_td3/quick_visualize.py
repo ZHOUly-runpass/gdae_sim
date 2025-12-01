@@ -9,9 +9,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src'
 import numpy as np
 import torch
 
-# ✓ 修复导入路径
 from environment.simulator import RobotSimulator
-from td3.agent import TD3Agent
+from td3. agent import TD3Agent
 from utils.visualizer import TD3Visualizer
 
 
@@ -55,20 +54,26 @@ def main():
 
     # 创建环境和智能体
     print("\n创建环境...")
-    env = RobotSimulator()
+    # ✅ 正确的环境初始化
+    env = RobotSimulator(
+        map_size=10.0,
+        laser_range=5.0,
+        laser_dim=20,
+        velocity_limits=(0.5, 2.0),  # (max_linear_velocity, max_angular_velocity)
+        time_step=0.1
+    )
 
     print("创建智能体...")
-    device = torch.device("cuda" if torch. cuda.is_available() else "cpu")
-    # ✓ 确保传入正确的状态和动作维度
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     agent = TD3Agent(state_dim=24, action_dim=2, device=device)
 
     # 加载模型（如果存在）
-    if os.path. exists(f"{MODEL_PATH}. pth"):
+    if os.path.exists(f"{MODEL_PATH}.pth"):
         print(f"加载模型: {MODEL_PATH}")
         agent.load(MODEL_PATH)
         print("✓ 模型加载成功")
     else:
-        print(f"⚠ 模型不存在: {MODEL_PATH}.pth")
+        print(f"⚠ 模型不存在: {MODEL_PATH}. pth")
         print("使用随机策略")
 
     # 创建可视化器
@@ -94,12 +99,12 @@ def main():
         print("=" * 60)
         print(f"Episode {visualizer.episode_count + 1}")
         print(f"初始位置: ({env.x:.2f}, {env.y:.2f})")
-        print(f"目标位置: ({env.goal_x:.2f}, {env. goal_y:.2f})")
+        print(f"目标位置: ({env.goal_x:.2f}, {env.goal_y:.2f})")
         print(f"初始距离: {obs['robot_state'][0]:.2f}m")
         print("=" * 60)
 
         while not done and steps < MAX_STEPS:
-            # ✓ 使用 TD3 选择动作（不添加噪声）
+            # 使用 TD3 选择动作（不添加噪声）
             action = agent.get_action(state, add_noise=False)
             action_in = [(action[0] + 1) / 2, action[1]]
 
@@ -122,12 +127,12 @@ def main():
 
         # Episode 结束
         print("\n" + "-" * 60)
-        if info.get('distance_to_goal', 1.0) < 0.3:
+        if info. get('reach_goal', False):  # 使用 reach_goal 而不是检查距离
             print("✓ 成功到达目标！")
         elif info.get('collision', False):
             print("✗ 发生碰撞")
         else:
-            print("⏱ 超时或出界")
+            print("⏱ 超时")
         print(f"总步数: {steps}")
         print(f"总奖励: {episode_reward:.2f}")
         print("-" * 60 + "\n")
@@ -136,7 +141,7 @@ def main():
             input("按 Enter 继续下一个 episode...")
 
     print("\n可视化完成！关闭窗口退出...")
-    visualizer. show()
+    visualizer.show()
 
 
 if __name__ == "__main__":

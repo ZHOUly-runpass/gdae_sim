@@ -340,7 +340,7 @@ class TD3Visualizer:
         self.ax_action.set_xlabel('Time Steps', fontsize=9)
         self.ax_action.set_ylabel('Action Value', fontsize=9)
         self.ax_action.set_title('Action History', fontsize=10, fontweight='bold')
-        # self.ax_action.legend(loc='upper right', fontsize=8)  # ← 删除这行
+        # self.ax_action.legend(loc='upper right', fontsize=8)  # 删除
         self.ax_action.grid(True, alpha=0.3)
 
     def _draw_reward_history(self, reward):  # ← 添加这个方法
@@ -489,7 +489,8 @@ if __name__ == "__main__":
             angular_vel = np.clip(angle * 2.0, -0.5, 0.5)
             action = [linear_vel, angular_vel]
 
-        action_in = [(action[0] + 1) / 2, action[1]]
+        action_in = [(action[0] + 1) / 2, action[1]]  # 对转角问题进行调整
+        # action_in = [(action[0] + 1) / 2, (action[1] + 1) / 2]
         next_obs, reward, done, info = env.step(action_in)
 
         # 更新可视化

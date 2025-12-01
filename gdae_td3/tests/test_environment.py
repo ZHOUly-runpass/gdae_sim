@@ -103,7 +103,11 @@ def test_step_function():
     print("测试 4: Step 功能")
     print("=" * 60)
 
-    env = RobotSimulator()
+    env = RobotSimulator(
+        max_linear_vel=0.5,
+        max_angular_vel=2.0,
+        time_step=0.1
+    )
     obs = env.reset()
 
     initial_x, initial_y, initial_theta = env.x, env.y, env.theta

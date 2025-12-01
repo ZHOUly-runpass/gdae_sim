@@ -44,7 +44,9 @@ class TD3Tester:
         self.env = RobotSimulator(
             map_size=self.map_size,
             laser_range=self.laser_range,
-            laser_dim=self.laser_dim
+            laser_dim=self.laser_dim,
+            velocity_limits=(0.5, 2.0),
+            time_step=0.1
         )
 
         # 创建智能体
