@@ -317,7 +317,7 @@ class TD3Trainer:
 
             # 更新状态
             state = next_state
-            last_action = action
+            last_action = np.array(action_in)
 
             self.episode_reward += reward
             self.episode_timesteps += 1
@@ -403,7 +403,7 @@ class TD3Trainer:
                 next_state = self._get_state(next_obs, action)
 
                 state = next_state
-                last_action = action
+                last_action = np.array(action_in)
                 episode_reward += reward
                 steps += 1
 

@@ -53,7 +53,9 @@ class RobotSimulator:
         self.goal_reach_threshold = 0.3
 
     def reset(self):
-        """重置环境及机器人状态"""
+        """
+        重置环境及机器人状态
+        """
         # 重新生成障碍物
         self.obstacles.reset()
 
@@ -68,11 +70,18 @@ class RobotSimulator:
         # 设置随机目标点（避免与障碍物重叠）
         while True:
             self.goal_x = random.uniform(-self.map_size / 2, self.map_size / 2)
-            self.goal_y = random. uniform(-self.map_size / 2, self.map_size / 2)
-            if not self.obstacles.check_collision(self.goal_x, self. goal_y):
+            self.goal_y = random.uniform(-self.map_size / 2, self.map_size / 2)
+            if not self.obstacles.check_collision(self.goal_x, self.goal_y):
                 break
 
-        return self.get_observation()
+        # 获取当前环境观测
+        observation = self.get_observation()
+
+        # 初始化 last_distance（当前机器人与目标的距离）
+        self.last_distance = observation['robot_state'][0]  # 距目标的初始距离
+
+        return observation
+
 
     def step(self, action):
         """
@@ -138,16 +147,61 @@ class RobotSimulator:
         }
 
     def compute_reward(self, distance, collision, action):
-        """计算奖励函数"""
-        if collision:  # 碰撞惩罚
+        """
+        计算奖励函数
+
+        Args:
+            distance: 到目标的距离
+            collision: 是否碰撞
+            action: [linear_vel, angular_vel]，范围 [0,1] 和 [-1,1]
+        """
+        if collision:
             return -100.0
-        elif distance < self.goal_reach_threshold:  # 到达目标奖励
+        elif distance < self.goal_reach_threshold:
             return 100.0
-        else:  # 综合式奖励
-            linear_reward = action[0] * 0.5  # 线速度奖励
-            angular_penalty = -abs(action[1]) * 0.2  # 转向惩罚
-            obstacle_penalty = -min(1.0, (1.0 / distance - 0.1))  # 距离障碍物的惩罚
-            return linear_reward + angular_penalty + obstacle_penalty
+        else:
+            # 1. 前进奖励
+            linear_reward = action[0] * 0.5
+
+            # 2. 朝向目标奖励（新增）
+            dx, dy = self.goal_x - self.x, self.goal_y - self.y
+            angle_to_goal = math.atan2(dy, dx)
+            angle_diff = abs(math.atan2(
+                math.sin(angle_to_goal - self.theta),
+                math.cos(angle_to_goal - self.theta)
+            ))
+            # 朝向越准确，奖励越大
+            heading_reward = (math.pi - angle_diff) / math.pi * 1.0
+
+            # 3. 距离减小奖励（新增）
+            if hasattr(self, 'last_distance'):
+                distance_reward = (self.last_distance - distance) * 5.0
+            else:
+                distance_reward = 0.0
+            self.last_distance = distance
+
+            # 4. 转向惩罚（大幅降低）
+            angular_penalty = -abs(action[1]) * 0.02
+
+            # 5.  障碍物惩罚（修复）
+            laser_data = self.lidar.get_lidar_data(
+                self.x, self.y, self.theta, self.obstacles
+            )
+            min_laser = min(laser_data)
+            if min_laser < 0.5:
+                obstacle_penalty = -(0.5 - min_laser) * 2.0
+            else:
+                obstacle_penalty = 0.0
+
+            total_reward = (
+                    linear_reward +
+                    heading_reward +
+                    distance_reward +
+                    angular_penalty +
+                    obstacle_penalty
+            )
+
+            return total_reward
 
     def render(self):
         """环境可视化"""
