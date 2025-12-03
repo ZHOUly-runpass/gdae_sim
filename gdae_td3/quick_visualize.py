@@ -106,6 +106,12 @@ def main():
         steps = 0
         episode_reward = 0
 
+        # --- 新增: 初始化轨迹列表 ---
+        trajectory = []
+        # 记录初始位置
+        trajectory.append((env.x, env.y))
+        # --------------------------
+
         print("=" * 60)
         print(f"Episode {visualizer.episode_count + 1}")
         print(f"初始位置: ({env.x:.2f}, {env.y:.2f})")
@@ -122,6 +128,10 @@ def main():
 
             # 执行动作
             next_obs, reward, done, info = env.step(action_in)
+
+            # --- 新增: 记录当前步骤后的位置 ---
+            trajectory.append((env.x, env.y))
+            # -------------------------------
 
             # 构建新的状态向量
             next_state = get_state(next_obs, np.array(action_in))  # last_action = action_in
@@ -150,6 +160,14 @@ def main():
             print("⏱ 超时")
         print(f"总步数: {steps}")
         print(f"总奖励: {episode_reward:.2f}")
+
+        # --- 新增: 打印本轮轨迹 ---
+        print("\n本轮运行轨迹 (Trajectory):")
+        # 将轨迹格式化为保留2位小数的字符串列表，方便阅读
+        formatted_traj = [f"({x:.2f}, {y:.2f})" for x, y in trajectory]
+        print(", ".join(formatted_traj))
+        # ------------------------
+
         print("-" * 60 + "\n")
 
         # 等待下一 Episode

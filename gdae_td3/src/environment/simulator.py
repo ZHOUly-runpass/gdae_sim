@@ -161,7 +161,7 @@ class RobotSimulator:
             return 100.0
         else:
             # 1. 前进奖励
-            linear_reward = action[0] * 0.5
+            linear_reward = action[0] * 0.3
 
             # 2. 朝向目标奖励（新增）
             dx, dy = self.goal_x - self.x, self.goal_y - self.y
@@ -171,17 +171,17 @@ class RobotSimulator:
                 math.cos(angle_to_goal - self.theta)
             ))
             # 朝向越准确，奖励越大
-            heading_reward = (math.pi - angle_diff) / math.pi * 1.0
+            heading_reward = (math.pi - angle_diff) / math.pi * 0.5
 
             # 3. 距离减小奖励（新增）
             if hasattr(self, 'last_distance'):
-                distance_reward = (self.last_distance - distance) * 5.0
+                distance_reward = (self.last_distance - distance) * 2.0
             else:
                 distance_reward = 0.0
             self.last_distance = distance
 
             # 4. 转向惩罚（大幅降低）
-            angular_penalty = -abs(action[1]) * 0.02
+            angular_penalty = -abs(action[1]) * 0.01
 
             # 5.  障碍物惩罚（修复）
             laser_data = self.lidar.get_lidar_data(
@@ -189,7 +189,7 @@ class RobotSimulator:
             )
             min_laser = min(laser_data)
             if min_laser < 0.5:
-                obstacle_penalty = -(0.5 - min_laser) * 2.0
+                obstacle_penalty = -(0.5 - min_laser) * 1.0
             else:
                 obstacle_penalty = 0.0
 

@@ -309,7 +309,7 @@ class TD3Trainer:
             next_obs, reward, done, info = self.env.step(action_in)
 
             # 构建下一个状态
-            next_state = self._get_state(next_obs, action)
+            next_state = self._get_state(next_obs, np.array(action_in))
 
             # 存储经验
             done_bool = float(done) if self.episode_timesteps < self.config['max_episode_steps'] else 0
@@ -400,7 +400,7 @@ class TD3Trainer:
                 action_in = [(action[0] + 1) / 2, action[1]]
 
                 next_obs, reward, done, info = self.env.step(action_in)
-                next_state = self._get_state(next_obs, action)
+                next_state = self._get_state(next_obs, np.array(action_in))
 
                 state = next_state
                 last_action = np.array(action_in)
