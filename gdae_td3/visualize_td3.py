@@ -16,8 +16,17 @@ from gdae_td3.src.utils.visualizer import TD3Visualizer
 from gdae_td3.src.utils. video_recorder import VideoRecorder
 
 
-def get_state(obs, last_action, laser_dim=20):
-    """构建状态向量"""
+def get_state(obs, laser_dim=20):
+    """
+    构建状态向量（与训练时一致）
+
+    Args:
+        obs: 环境观测
+        laser_dim: 激光压缩维度
+
+    Returns:
+        state: [state_dim] numpy array
+    """
     laser_data = obs['laser']
     laser_compressed = []
 
@@ -28,10 +37,16 @@ def get_state(obs, last_action, laser_dim=20):
         sector_min = min(laser_data[start:end])
         laser_compressed.append(sector_min / 10.0)
 
+    # 使用当前速度而非历史动作
+    if 'velocity' in obs:
+        velocity = obs['velocity']
+    else:
+        velocity = [0.0, 0.0]
+
     state = np.concatenate([
         laser_compressed,
         obs['robot_state'],
-        last_action
+        velocity  # 使用当前速度
     ])
 
     return state
@@ -58,8 +73,7 @@ def run_episode(env, agent, visualizer, max_steps=500, record_video=False):
     if record_video:
         recorder = VideoRecorder(visualizer, fps=20)
 
-    last_action = np.array([0.0, 0.0])
-    state = get_state(obs, last_action)
+    state = get_state(obs)  # 不再需要 last_action
 
     episode_reward = 0
     steps = 0
@@ -77,7 +91,7 @@ def run_episode(env, agent, visualizer, max_steps=500, record_video=False):
 
         # 执行动作
         next_obs, reward, done, info = env.step(action_in)
-        next_state = get_state(next_obs, action)
+        next_state = get_state(next_obs)  # 使用环境返回的速度
 
         # 更新可视化
         visualizer.update(obs, action, reward)
@@ -88,7 +102,6 @@ def run_episode(env, agent, visualizer, max_steps=500, record_video=False):
 
         # 更新状态
         state = next_state
-        last_action = action
         episode_reward += reward
         steps += 1
 

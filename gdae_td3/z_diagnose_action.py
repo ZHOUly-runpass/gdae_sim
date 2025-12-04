@@ -10,14 +10,14 @@ import torch
 from environment. simulator import RobotSimulator
 from td3.agent import TD3Agent
 
-def get_state(obs, last_action):
+def get_state(obs):
     """
     构建状态向量（必须与训练时完全一致）
 
     状态组成（24维）:
     - 压缩激光数据: 20维
     - 机器人状态: 2维 (distance_to_goal, angle_to_goal)
-    - 上一步动作: 2维 (last_linear_vel, last_angular_vel)
+    - 当前速度: 2维 (current_linear_vel, current_angular_vel)
     """
     laser_data = obs['laser']
     laser_compressed = []
@@ -30,11 +30,17 @@ def get_state(obs, last_action):
         sector_min = min(laser_data[start:end])
         laser_compressed.append(sector_min / 10.0)  # 归一化
 
+    # 获取当前速度
+    if 'velocity' in obs:
+        velocity = obs['velocity']
+    else:
+        velocity = [0.0, 0.0]
+
     # 组合状态
     state = np.concatenate([
         laser_compressed,      # 20 维
         obs['robot_state'],    # 2 维 (distance, angle)
-        last_action            # 2 维
+        velocity               # 2 维 (当前速度)
     ])
 
     return state
@@ -56,17 +62,16 @@ else:
     exit(1)
 
 # 重置环境
-obs = env.reset()
-last_action = np.array([0.0, 0.0])
+obs = env. reset()
 
 # 构建状态
-state = get_state(obs, last_action)
+state = get_state(obs)
 
 print(f"\n状态信息:")
 print(f"  激光数据原始长度: {len(obs['laser'])}")
 print(f"  激光数据压缩后: 20维")
 print(f"  机器人状态: {obs['robot_state']} (2维)")
-print(f"  上一步动作: {last_action} (2维)")
+print(f"  当前速度: {obs. get('velocity', [0.0, 0.0])} (2维)")  # 修改
 print(f"  总状态维度: {state.shape} ✓")
 print(f"  距离目标: {obs['robot_state'][0]:.2f}m")
 print(f"  目标角度: {np.degrees(obs['robot_state'][1]):.1f}°")
@@ -155,9 +160,39 @@ for method_name, action_in in [("方式A", action_A), ("方式B", action_B), ("�
 
     print(f"  总移动距离: {total_distance:.3f}m")
 
+# ========== 新增：验证速度追踪 ==========
+print("\n" + "=" * 60)
+print("速度追踪验证")
+print("=" * 60)
+
+env_verify = RobotSimulator()
+obs_verify = env_verify.reset()
+
+print(f"初始观测包含 velocity: {'velocity' in obs_verify}")
+if 'velocity' in obs_verify:
+    print(f"初始速度: {obs_verify['velocity']}")
+
+    # 执行一个动作
+    test_action = [0.5, 0.3]
+    obs_next, _, _, _ = env_verify.step(test_action)
+
+    print(f"\n执行动作 {test_action}:")
+    print(f"  下一步观测包含 velocity: {'velocity' in obs_next}")
+    print(f"  实际速度: {obs_next['velocity']}")
+    print(f"  预期速度: [{test_action[0] * 0.5:.3f}, {test_action[1] * 2.0:.3f}]")
+
+    # 验证
+    expected = [test_action[0] * 0.5, test_action[1] * 2.0]
+    actual = obs_next['velocity']
+    if abs(actual[0] - expected[0]) < 0.001 and abs(actual[1] - expected[1]) < 0.001:
+        print(f"  ✓ 速度追踪正常")
+    else:
+        print(f"  ✗ 速度追踪异常")
+else:
+    print(f"✗ 错误：环境观测缺少 velocity 字段！")
+    print(f"   请确保已修改 simulator.py 的 get_observation 方法")
+# ==========================================
+
 print("\n" + "=" * 60)
 print("诊断结论")
-print("=" * 60)
-print("如果某个方式的 '朝向变化' 接近 0，说明该方式的角速度转换有问题。")
-print("应该选择 '朝向变化' 明显的那个转换方式。")
 print("=" * 60)

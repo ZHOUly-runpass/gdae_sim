@@ -94,6 +94,22 @@ def test_observation_format():
     assert distance >= 0, "距离不能为负"
     assert -math.pi <= angle <= math.pi, "角度超出范围"
 
+    # ========== 新增：检查速度信息 ==========
+    print(f"\n  速度信息:")
+    assert 'velocity' in obs, "观测缺少 velocity 数据"
+
+    velocity = obs['velocity']
+    assert len(velocity) == 2, "速度维度应该是 2"
+
+    linear_vel, angular_vel = velocity
+    print(f"    当前线速度: {linear_vel:. 3f} m/s")
+    print(f"    当前角速度: {angular_vel:.3f} rad/s")
+
+    # 初始化时速度应该为 0
+    assert linear_vel == 0.0, "初始线速度应该为 0"
+    assert angular_vel == 0.0, "初始角速度应该为 0"
+    # ==========================================
+
     print("\n✓ 观测数据格式正确")
 
 
@@ -104,8 +120,7 @@ def test_step_function():
     print("=" * 60)
 
     env = RobotSimulator(
-        max_linear_vel=0.5,
-        max_angular_vel=2.0,
+        velocity_limits=(0.5, 2.0),
         time_step=0.1
     )
     obs = env.reset()
@@ -133,6 +148,19 @@ def test_step_function():
     assert distance_moved > 0, "机器人应该移动"
     assert 'distance_to_goal' in info, "info 缺少 distance_to_goal"
     assert 'collision' in info, "info 缺少 collision"
+
+    # ========== 新增：验证速度更新 ==========
+    print(f"\n  速度更新检查:")
+    assert 'velocity' in next_obs, "下一步观测缺少 velocity"
+
+    new_velocity = next_obs['velocity']
+    print(f"    新的线速度: {new_velocity[0]:.3f} m/s")
+    print(f"    新的角速度: {new_velocity[1]:.3f} rad/s")
+
+    # 验证速度已更新
+    assert new_velocity[0] > 0, "执行前进动作后线速度应该大于 0"
+    assert abs(new_velocity[1]) < 0.01, "不转向时角速度应该接近 0"
+    # ==========================================
 
     print("\n✓ Step 功能正常")
 
@@ -260,6 +288,47 @@ def test_multiple_episodes():
     print("\n✓ 多 Episode 运行正常")
 
 
+def test_velocity_tracking():
+    """测试速度追踪"""
+    print("\n" + "=" * 60)
+    print("测试 7. 5: 速度追踪")
+    print("=" * 60)
+
+    env = RobotSimulator(
+        velocity_limits=(0.5, 2.0),
+        time_step=0.1
+    )
+    obs = env.reset()
+
+    print(f"\n  初始速度: {obs['velocity']}")
+
+    # 测试不同动作的速度响应
+    test_actions = [
+        ([0.5, 0.0], "只前进"),
+        ([0.0, 0.5], "只转向"),
+        ([0.5, 0.5], "前进+转向"),
+        ([0.0, 0.0], "静止")
+    ]
+
+    for action, desc in test_actions:
+        obs = env.reset()
+        next_obs, reward, done, info = env.step(action)
+        velocity = next_obs['velocity']
+
+        print(f"\n  动作: {action} ({desc})")
+        print(f"    结果速度: [{velocity[0]:.3f}, {velocity[1]:.3f}]")
+        print(f"    预期线速度: {action[0] * 0.5:.3f} m/s")
+        print(f"    预期角速度: {action[1] * 2.0:.3f} rad/s")
+
+        # 验证速度计算正确
+        expected_linear = action[0] * 0.5
+        expected_angular = action[1] * 2.0
+
+        assert abs(velocity[0] - expected_linear) < 0.001, f"线速度不匹配: {velocity[0]} vs {expected_linear}"
+        assert abs(velocity[1] - expected_angular) < 0.001, f"角速度不匹配: {velocity[1]} vs {expected_angular}"
+
+    print("\n✓ 速度追踪正常")
+
 if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("开始测试仿真环境")
@@ -272,6 +341,7 @@ if __name__ == "__main__":
         test_step_function()
         test_collision_detection()
         test_goal_reaching()
+        test_velocity_tracking()  # 新增测试
         test_reward_function()
         test_multiple_episodes()
 

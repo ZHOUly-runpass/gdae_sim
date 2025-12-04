@@ -14,14 +14,14 @@ from td3.agent import TD3Agent
 from utils.visualizer import TD3Visualizer
 
 
-def get_state(obs, last_action):
+def get_state(obs):
     """
     构建状态向量，与训练阶段完全一致。
 
     状态组成（24维）:
     - 压缩激光数据: 20维
     - 机器人状态: 2维 (distance_to_goal, angle_to_goal)
-    - 上一步动作: 2维 (last_linear_vel, last_angular_vel)
+    - 当前速度: 2维 (current_linear_vel, current_angular_vel)
     """
     laser_data = obs['laser']
     laser_compressed = []
@@ -34,11 +34,17 @@ def get_state(obs, last_action):
         sector_min = min(laser_data[start:end])
         laser_compressed.append(sector_min / 10.0)  # 归一化
 
-    # 拼接状态：[laser(20), distance(1), angle(1), last_linear(1), last_angular(1)]
+    # 获取当前速度
+    if 'velocity' in obs:
+        velocity = obs['velocity']
+    else:
+        velocity = [0.0, 0.0]
+
+    # 拼接状态：[laser(20), distance(1), angle(1), current_linear_vel(1), current_angular_vel(1)]
     state = np.concatenate([
         laser_compressed,      # 激光数据（20维）
         obs['robot_state'],    # [距离到目标, 相对角度]
-        last_action            # [线速度, 角速度]（必须与实际执行的一致）
+        velocity               # [当前线速度, 当前角速度]
     ])
 
     return state
@@ -97,9 +103,8 @@ def main():
         if ep > 0:
             visualizer.reset()
 
-        # 初始化状态
-        last_action = np.array([0.0, 0.0])  # 必须与 action_in 的范围一致！
-        state = get_state(obs, last_action)
+        # 初始化状态（不再需要 last_action）
+        state = get_state(obs)
 
         # Episode 设置
         done = False
@@ -129,19 +134,17 @@ def main():
             # 执行动作
             next_obs, reward, done, info = env.step(action_in)
 
-            # --- 新增: 记录当前步骤后的位置 ---
+            # --- 记录当前步骤后的位置 ---
             trajectory.append((env.x, env.y))
-            # -------------------------------
 
-            # 构建新的状态向量
-            next_state = get_state(next_obs, np.array(action_in))  # last_action = action_in
+            # 构建新的状态向量（使用环境返回的速度）
+            next_state = get_state(next_obs)
 
             # 更新可视化视图
             visualizer.update(obs, action_in, reward)
 
             # 更新 episode 状态
-            state = next_state  # 更新当前状态
-            last_action = np.array(action_in)  # 更新实际执行的动作为历史动作
+            state = next_state
             episode_reward += reward
             steps += 1
 

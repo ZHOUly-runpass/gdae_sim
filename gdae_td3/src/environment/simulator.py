@@ -42,7 +42,10 @@ class RobotSimulator:
         self.time_step = time_step
 
         # 机器人状态
-        self.x, self. y, self.theta = 0.0, 0.0, 0.0
+        self.x, self.y, self.theta = 0.0, 0.0, 0.0
+        # 添加当前速度追踪
+        self.current_linear_vel = 0.0
+        self.current_angular_vel = 0.0
 
         # 障碍物管理
         self.obstacles = ObstacleManager(map_size)
@@ -105,11 +108,14 @@ class RobotSimulator:
         actual_linear_vel = linear_vel * self.max_linear_vel
         actual_angular_vel = angular_vel * self.max_angular_vel
 
+        # 保存当前速度（用于状态观测）
+        self.current_linear_vel = actual_linear_vel
+        self.current_angular_vel = actual_angular_vel
+
         # 更新位置和朝向
         self.x += actual_linear_vel * math.cos(self.theta) * self.time_step
-        self.y += actual_linear_vel * math.sin(self. theta) * self.time_step
+        self.y += actual_linear_vel * math.sin(self.theta) * self.time_step
         self.theta += actual_angular_vel * self.time_step
-        self.theta = math. atan2(math.sin(self.theta), math.cos(self.theta))  # 角度归一化
 
         # 检测目标和碰撞
         distance_to_goal = np.linalg.norm([self.goal_x - self. x, self.goal_y - self.y])
@@ -133,72 +139,79 @@ class RobotSimulator:
     def get_observation(self):
         """返回当前状态观测"""
         # 获取激光雷达数据
-        laser_data = self.lidar. get_lidar_data(self.x, self.y, self.theta, self.obstacles)
+        laser_data = self.lidar.get_lidar_data(self.x, self.y, self.theta, self.obstacles)
 
         # 计算目标的相对方向
         dx, dy = self.goal_x - self.x, self.goal_y - self.y
         distance_to_goal = np.linalg.norm([dx, dy])
         relative_angle = math.atan2(dy, dx) - self.theta
-        relative_angle = math. atan2(math.sin(relative_angle), math.cos(relative_angle))
+        relative_angle = math.atan2(math.sin(relative_angle), math.cos(relative_angle))
 
         return {
             'laser': laser_data,
             'robot_state': [distance_to_goal, relative_angle],
+            'velocity': [self.current_linear_vel, self.current_angular_vel]  # 新增速度信息
         }
 
     def compute_reward(self, distance, collision, action):
         """
-        计算奖励函数
+        计算奖励函数 - 对齐 DRL-robot-navigation 项目设计
 
         Args:
             distance: 到目标的距离
             collision: 是否碰撞
             action: [linear_vel, angular_vel]，范围 [0,1] 和 [-1,1]
+
+        Returns:
+            reward: 标量奖励值
         """
+        # 1. 碰撞惩罚（大惩罚）
         if collision:
-            return -100.0
+            return -200.0
+
+        # 2. 到达目标奖励（大奖励）
         elif distance < self.goal_reach_threshold:
-            return 100.0
+            return 200.0
+
         else:
-            # 1. 前进奖励
-            linear_reward = action[0] * 0.3
+            # ========== 核心奖励函数 ==========
 
-            # 2. 朝向目标奖励（新增）
-            dx, dy = self.goal_x - self.x, self.goal_y - self.y
-            angle_to_goal = math.atan2(dy, dx)
-            angle_diff = abs(math.atan2(
-                math.sin(angle_to_goal - self.theta),
-                math.cos(angle_to_goal - self.theta)
-            ))
-            # 朝向越准确，奖励越大
-            heading_reward = (math.pi - angle_diff) / math.pi * 0.5
-
-            # 3. 距离减小奖励（新增）
+            # 3. 距离变化奖励（主要奖励来源）
             if hasattr(self, 'last_distance'):
-                distance_reward = (self.last_distance - distance) * 2.0
+                distance_reward = (self.last_distance - distance) * 2.5
             else:
                 distance_reward = 0.0
             self.last_distance = distance
 
-            # 4. 转向惩罚（大幅降低）
-            angular_penalty = -abs(action[1]) * 0.01
+            # 4. 朝向目标奖励（辅助，权重很小）
+            # 计算目标相对角度
+            dx, dy = self.goal_x - self.x, self.goal_y - self.y
+            angle_to_goal = math.atan2(dy, dx)
+            angle_diff = angle_to_goal - self.theta
+            # 归一化角度到 [-π, π]
+            angle_diff = math.atan2(math.sin(angle_diff), math.cos(angle_diff))
+            # 使用 cos 函数，朝向越准确奖励越大
+            heading_reward = math.cos(angle_diff) * 0.1
 
-            # 5.  障碍物惩罚（修复）
+            # 5.  时间惩罚（每步固定，鼓励快速到达）
+            time_penalty = -0.01
+
+            # 6. 障碍物惩罚（接近障碍物时）
             laser_data = self.lidar.get_lidar_data(
                 self.x, self.y, self.theta, self.obstacles
             )
             min_laser = min(laser_data)
-            if min_laser < 0.5:
-                obstacle_penalty = -(0.5 - min_laser) * 1.0
+            if min_laser < 0.3:  # 距离障碍物小于 0.3m
+                obstacle_penalty = -0.5
             else:
                 obstacle_penalty = 0.0
 
+            # 总奖励
             total_reward = (
-                    linear_reward +
-                    heading_reward +
-                    distance_reward +
-                    angular_penalty +
-                    obstacle_penalty
+                    distance_reward +  # 主要：±2.5 左右
+                    heading_reward +  # 辅助：±0.1
+                    time_penalty +  # 压力：-0.01
+                    obstacle_penalty  # 安全：0 或 -0.5
             )
 
             return total_reward

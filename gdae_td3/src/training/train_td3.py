@@ -152,13 +152,13 @@ class TD3Trainer:
         if torch.cuda.is_available():
             torch.cuda.manual_seed(seed)
 
-    def _get_state(self, obs, last_action):
+    def _get_state(self, obs, last_action=None):
         """
         构建完整状态向量
 
         Args:
             obs: 环境观测
-            last_action: 上一次动作
+            last_action: 上一次动作（已弃用，保留参数以兼容旧代码）
 
         Returns:
             state: [state_dim] numpy array
@@ -167,19 +167,25 @@ class TD3Trainer:
         laser_data = obs['laser']
         laser_compressed = []
 
-        # 将 720 个激光点压缩为 20 个扇区
+        # 将激光点压缩为 20 个扇区
         points_per_sector = len(laser_data) // 20
         for i in range(20):
             start = i * points_per_sector
             end = (i + 1) * points_per_sector
             sector_min = min(laser_data[start:end])
-            laser_compressed.append(sector_min / 10.0)  # 归一化到 [0, 1]
+            laser_compressed. append(sector_min / 10.0)  # 归一化到 [0, 1]
 
-        # 拼接状态：[laser(20), distance(1), angle(1), last_linear(1), last_angular(1)]
+        # 获取当前速度（而非历史动作）
+        if 'velocity' in obs:
+            velocity = obs['velocity']
+        else:
+            velocity = [0.0, 0.0]  # 兼容旧版本
+
+        # 拼接状态：[laser(20), distance(1), angle(1), current_linear_vel(1), current_angular_vel(1)]
         state = np.concatenate([
             laser_compressed,
             obs['robot_state'],  # [distance, angle]
-            last_action  # [linear_vel, angular_vel]
+            velocity             # [current_linear_vel, current_angular_vel]
         ])
 
         return state
@@ -246,8 +252,7 @@ class TD3Trainer:
 
         # 初始化
         obs = self.env.reset()
-        last_action = np.array([0.0, 0.0])
-        state = self._get_state(obs, last_action)
+        state = self._get_state(obs)  # 不再需要 last_action
 
         done = False
         self.episode_reward = 0
@@ -291,8 +296,7 @@ class TD3Trainer:
 
                 # 重置环境
                 obs = self.env.reset()
-                last_action = np.array([0.0, 0.0])
-                state = self._get_state(obs, last_action)
+                state = self._get_state(obs)  # 不再需要 last_action
 
                 done = False
                 self.episode_reward = 0
@@ -308,8 +312,8 @@ class TD3Trainer:
             # 执行动作
             next_obs, reward, done, info = self.env.step(action_in)
 
-            # 构建下一个状态
-            next_state = self._get_state(next_obs, np.array(action_in))
+            # 构建下一个状态（使用环境返回的速度信息）
+            next_state = self._get_state(next_obs)
 
             # 存储经验
             done_bool = float(done) if self.episode_timesteps < self.config['max_episode_steps'] else 0
@@ -317,7 +321,6 @@ class TD3Trainer:
 
             # 更新状态
             state = next_state
-            last_action = np.array(action_in)
 
             self.episode_reward += reward
             self.episode_timesteps += 1
@@ -387,8 +390,7 @@ class TD3Trainer:
 
         for _ in range(num_episodes):
             obs = self.env.reset()
-            last_action = np.array([0.0, 0.0])
-            state = self._get_state(obs, last_action)
+            state = self._get_state(obs)  # 不再需要 last_action
 
             episode_reward = 0
             done = False
@@ -400,10 +402,9 @@ class TD3Trainer:
                 action_in = [(action[0] + 1) / 2, action[1]]
 
                 next_obs, reward, done, info = self.env.step(action_in)
-                next_state = self._get_state(next_obs, np.array(action_in))
+                next_state = self._get_state(next_obs)  # 使用速度信息
 
                 state = next_state
-                last_action = np.array(action_in)
                 episode_reward += reward
                 steps += 1
 

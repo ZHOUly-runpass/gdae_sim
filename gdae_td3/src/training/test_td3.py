@@ -69,8 +69,17 @@ class TD3Tester:
 
         print("初始化完成！\n")
 
-    def _get_state(self, obs, last_action):
-        """构建状态向量"""
+    def _get_state(self, obs, last_action=None):
+        """
+        构建状态向量（与训练时一致）
+
+        Args:
+            obs: 环境观测
+            last_action: 已弃用，保留参数以兼容旧代码
+
+        Returns:
+            state: [state_dim] numpy array
+        """
         laser_data = obs['laser']
         laser_compressed = []
 
@@ -81,13 +90,19 @@ class TD3Tester:
             sector_min = min(laser_data[start:end])
             laser_compressed.append(sector_min / 10.0)
 
-        state = np.concatenate([
-            laser_compressed,
-            obs['robot_state'],
-            last_action
-        ])
+            # 获取当前速度（而非历史动作）
+            if 'velocity' in obs:
+                velocity = obs['velocity']
+            else:
+                velocity = [0.0, 0.0]  # 兼容旧版本
 
-        return state
+            state = np.concatenate([
+                laser_compressed,
+                obs['robot_state'],
+                velocity  # 使用当前速度
+            ])
+
+            return state
 
     def test_episode(self, max_steps=500, visualize=True):
         """
@@ -101,8 +116,7 @@ class TD3Tester:
             dict: 测试结果
         """
         obs = self.env.reset()
-        last_action = np.array([0.0, 0.0])
-        state = self._get_state(obs, last_action)
+        state = self._get_state(obs)  # 不再需要 last_action
 
         episode_reward = 0
         steps = 0
@@ -121,7 +135,7 @@ class TD3Tester:
 
             # 执行动作
             next_obs, reward, done, info = self.env.step(action_in)
-            next_state = self._get_state(next_obs, action)
+            next_state = self._get_state(next_obs)  # 使用环境返回的速度
 
             # 记录轨迹
             self.trajectory.append([self.env.x, self.env.y])
@@ -132,7 +146,6 @@ class TD3Tester:
 
             # 更新状态
             state = next_state
-            last_action = action
             episode_reward += reward
             steps += 1
 
