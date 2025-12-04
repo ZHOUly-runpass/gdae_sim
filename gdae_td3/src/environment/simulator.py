@@ -166,8 +166,7 @@ class RobotSimulator:
 
             # 1. 距离变化奖励
             if hasattr(self, 'last_distance'):
-                distance_reward = (self.last_distance - distance) * 2.
-                0
+                distance_reward = (self.last_distance - distance) * 2.0
             else:
                 distance_reward = 0.0
             self.last_distance = distance
@@ -178,16 +177,14 @@ class RobotSimulator:
 
             # 3. 旋转惩罚（惩罚角速度） 关键修复
             # action[1] 范围 [-1, 1]
-            rotation_penalty = -abs(action[1]) * 0.
-            5  # 角速度越大惩罚越大
+            rotation_penalty = -abs(action[1]) * 0.5  # 角速度越大惩罚越大
 
             # 4. 障碍物惩罚
             laser_data = self.lidar.get_lidar_data(
                 self.x, self.y, self.theta, self.obstacles
             )
             min_laser = min(laser_data)
-            obstacle_penalty = -(1 - min_laser) * 0.5 if min_laser < 1 else 0.
-            0
+            obstacle_penalty = -(1 - min_laser) * 0.5 if min_laser < 1 else 0.0
 
             # 5. 时间惩罚
             time_penalty = -0.01

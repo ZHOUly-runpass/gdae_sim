@@ -16,16 +16,9 @@ from gdae_td3.src.utils.visualizer import TD3Visualizer
 from gdae_td3.src.utils. video_recorder import VideoRecorder
 
 
-def get_state(obs, laser_dim=20):
+def get_state(obs, last_action=None, laser_dim=20):
     """
     构建状态向量（与训练时一致）
-
-    Args:
-        obs: 环境观测
-        laser_dim: 激光压缩维度
-
-    Returns:
-        state: [state_dim] numpy array
     """
     laser_data = obs['laser']
     laser_compressed = []
@@ -37,43 +30,29 @@ def get_state(obs, laser_dim=20):
         sector_min = min(laser_data[start:end])
         laser_compressed.append(sector_min / 10.0)
 
-    # 使用当前速度而非历史动作
-    if 'velocity' in obs:
-        velocity = obs['velocity']
-    else:
-        velocity = [0.0, 0.0]
+    # 修改：使用 last_action
+    if last_action is None:
+        last_action = np.array([0.0, 0.0])
 
     state = np.concatenate([
         laser_compressed,
         obs['robot_state'],
-        velocity  # 使用当前速度
+        last_action  # 使用上一步动作
     ])
 
     return state
 
 
+
 def run_episode(env, agent, visualizer, max_steps=500, record_video=False):
-    """
-    运行单个 episode
-
-    Args:
-        env: 环境
-        agent: TD3 智能体
-        visualizer: 可视化器
-        max_steps: 最大步数
-        record_video: 是否录制视频
-
-    Returns:
-        dict: Episode 结果
-    """
-    # 重置环境和可视化器
     obs = env.reset()
     visualizer.reset()
 
     if record_video:
         recorder = VideoRecorder(visualizer, fps=20)
 
-    state = get_state(obs)  # 不再需要 last_action
+    last_action = np.array([0.0, 0.0])  #  新增
+    state = get_state(obs, last_action=last_action)  #  修改
 
     episode_reward = 0
     steps = 0
@@ -85,23 +64,19 @@ def run_episode(env, agent, visualizer, max_steps=500, record_video=False):
     print(f"初始距离: {obs['robot_state'][0]:. 2f}m\n")
 
     while not done and steps < max_steps:
-        # 使用 TD3 选择动作
         action = agent.get_action(state, add_noise=False)
         action_in = [(action[0] + 1) / 2, action[1]]
 
-        # 执行动作
         next_obs, reward, done, info = env.step(action_in)
-        next_state = get_state(next_obs)  # 使用环境返回的速度
+        next_state = get_state(next_obs, last_action=action)  #  修改
 
-        # 更新可视化
         visualizer.update(obs, action, reward)
 
-        # 录制视频帧
         if record_video:
             recorder.capture_frame()
 
-        # 更新状态
         state = next_state
+        last_action = action  #  新增
         episode_reward += reward
         steps += 1
 

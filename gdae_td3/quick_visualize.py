@@ -14,37 +14,28 @@ from td3.agent import TD3Agent
 from utils.visualizer import TD3Visualizer
 
 
-def get_state(obs):
+def get_state(obs, last_action=None):
     """
     构建状态向量，与训练阶段完全一致。
-
-    状态组成（24维）:
-    - 压缩激光数据: 20维
-    - 机器人状态: 2维 (distance_to_goal, angle_to_goal)
-    - 当前速度: 2维 (current_linear_vel, current_angular_vel)
     """
     laser_data = obs['laser']
     laser_compressed = []
 
-    # 压缩激光数据到 20 维
     points_per_sector = len(laser_data) // 20
     for i in range(20):
         start = i * points_per_sector
         end = (i + 1) * points_per_sector
         sector_min = min(laser_data[start:end])
-        laser_compressed.append(sector_min / 10.0)  # 归一化
+        laser_compressed. append(sector_min / 10.0)
 
-    # 获取当前速度
-    if 'velocity' in obs:
-        velocity = obs['velocity']
-    else:
-        velocity = [0.0, 0.0]
+    #  修改：使用 last_action
+    if last_action is None:
+        last_action = np.array([0.0, 0.0])
 
-    # 拼接状态：[laser(20), distance(1), angle(1), current_linear_vel(1), current_angular_vel(1)]
     state = np.concatenate([
-        laser_compressed,      # 激光数据（20维）
-        obs['robot_state'],    # [距离到目标, 相对角度]
-        velocity               # [当前线速度, 当前角速度]
+        laser_compressed,
+        obs['robot_state'],
+        last_action  # 使用上一步动作
     ])
 
     return state
@@ -103,17 +94,12 @@ def main():
         if ep > 0:
             visualizer.reset()
 
-        # 初始化状态（不再需要 last_action）
-        state = get_state(obs)
-
-        # Episode 设置
+        last_action = np.array([0.0, 0.0])  #  新增
+        state = get_state(obs, last_action=last_action)  #  修改
         done = False
         steps = 0
         episode_reward = 0
-
-        # --- 新增: 初始化轨迹列表 ---
         trajectory = []
-        # 记录初始位置
         trajectory.append((env.x, env.y))
         # --------------------------
 
@@ -125,26 +111,18 @@ def main():
         print("=" * 60)
 
         while not done and steps < MAX_STEPS:
-            # 使用 TD3 选择动作（无噪声）
             action = agent.get_action(state, add_noise=False)
+            action_in = [(action[0] + 1) / 2, action[1]]
 
-            # 转换动作到环境实际范围，用于执行
-            action_in = [(action[0] + 1) / 2, action[1]]  # 转换线速度到 [0,1]
-
-            # 执行动作
             next_obs, reward, done, info = env.step(action_in)
-
-            # --- 记录当前步骤后的位置 ---
             trajectory.append((env.x, env.y))
 
-            # 构建新的状态向量（使用环境返回的速度）
-            next_state = get_state(next_obs)
+            next_state = get_state(next_obs, last_action=action)  #  修改
 
-            # 更新可视化视图
             visualizer.update(obs, action_in, reward)
 
-            # 更新 episode 状态
             state = next_state
+            last_action = action  #  新增
             episode_reward += reward
             steps += 1
 
