@@ -156,62 +156,48 @@ class RobotSimulator:
     def compute_reward(self, distance, collision, action):
         """
         计算奖励函数 - 对齐 DRL-robot-navigation 项目设计
-
-        Args:
-            distance: 到目标的距离
-            collision: 是否碰撞
-            action: [linear_vel, angular_vel]，范围 [0,1] 和 [-1,1]
-
-        Returns:
-            reward: 标量奖励值
         """
-        # 1. 碰撞惩罚（大惩罚）
         if collision:
-            return -200.0
-
-        # 2. 到达目标奖励（大奖励）
+            return -100.0
         elif distance < self.goal_reach_threshold:
-            return 200.0
-
+            return 100.0
         else:
-            # ========== 核心奖励函数 ==========
+            # ========== 核心修复：添加动作相关奖励 ==========
 
-            # 3. 距离变化奖励（主要奖励来源）
+            # 1. 距离变化奖励
             if hasattr(self, 'last_distance'):
-                distance_reward = (self.last_distance - distance) * 2.5
+                distance_reward = (self.last_distance - distance) * 2.
+                0
             else:
                 distance_reward = 0.0
             self.last_distance = distance
 
-            # 4. 朝向目标奖励（辅助，权重很小）
-            # 计算目标相对角度
-            dx, dy = self.goal_x - self.x, self.goal_y - self.y
-            angle_to_goal = math.atan2(dy, dx)
-            angle_diff = angle_to_goal - self.theta
-            # 归一化角度到 [-π, π]
-            angle_diff = math.atan2(math.sin(angle_diff), math.cos(angle_diff))
-            # 使用 cos 函数，朝向越准确奖励越大
-            heading_reward = math.cos(angle_diff) * 0.1
+            # 2. 前进奖励（鼓励线速度）
+            # action[0] 范围 [0, 1]，映射到奖励
+            forward_reward = action[0] * 0.5  # 线速度越大奖励越高
 
-            # 5.  时间惩罚（每步固定，鼓励快速到达）
-            time_penalty = -0.01
+            # 3. 旋转惩罚（惩罚角速度） 关键修复
+            # action[1] 范围 [-1, 1]
+            rotation_penalty = -abs(action[1]) * 0.
+            5  # 角速度越大惩罚越大
 
-            # 6. 障碍物惩罚（接近障碍物时）
+            # 4. 障碍物惩罚
             laser_data = self.lidar.get_lidar_data(
                 self.x, self.y, self.theta, self.obstacles
             )
             min_laser = min(laser_data)
-            if min_laser < 0.3:  # 距离障碍物小于 0.3m
-                obstacle_penalty = -0.5
-            else:
-                obstacle_penalty = 0.0
+            obstacle_penalty = -(1 - min_laser) * 0.5 if min_laser < 1 else 0.
+            0
 
-            # 总奖励
+            # 5. 时间惩罚
+            time_penalty = -0.01
+
             total_reward = (
-                    distance_reward +  # 主要：±2.5 左右
-                    heading_reward +  # 辅助：±0.1
-                    time_penalty +  # 压力：-0.01
-                    obstacle_penalty  # 安全：0 或 -0.5
+                    distance_reward +
+                    forward_reward +  # 新增：鼓励前进
+                    rotation_penalty +  # 新增：惩罚旋转
+                    obstacle_penalty +
+                    time_penalty
             )
 
             return total_reward
