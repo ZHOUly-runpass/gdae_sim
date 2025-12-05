@@ -40,7 +40,8 @@ class TD3Trainer:
         'max_action': 1.0,
 
         # 训练参数
-        'max_timesteps': int(5e6),
+        # 'max_timesteps': int(5e6),
+        'max_timesteps': int(5e4),  # 测试时缩短训练时间
         'start_timesteps': int(1e4),  # 开始训练前的随机探索步数
         'batch_size': 256,
         'eval_freq': int(5e3),  # 评估频率
