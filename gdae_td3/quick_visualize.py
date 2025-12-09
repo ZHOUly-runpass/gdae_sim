@@ -4,12 +4,12 @@
 """
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
+sys.path.insert(0, os. path.abspath(os.path.join(os. path.dirname(__file__), 'src')))
 
 import numpy as np
 import torch
 
-from environment.simulator import RobotSimulator
+from environment. simulator import RobotSimulator
 from td3.agent import TD3Agent
 from utils.visualizer import TD3Visualizer
 
@@ -25,10 +25,10 @@ def get_state(obs, last_action=None):
     for i in range(20):
         start = i * points_per_sector
         end = (i + 1) * points_per_sector
-        sector_min = min(laser_data[start:end])
-        laser_compressed. append(sector_min / 10.0)
+        sector_min = min(laser_data[start: end])
+        laser_compressed.append(sector_min / 10.0)
 
-    #  修改：使用 last_action
+    # 修改：使用 last_action
     if last_action is None:
         last_action = np.array([0.0, 0.0])
 
@@ -47,8 +47,13 @@ def main():
     print("TD3 快速可视化")
     print("=" * 80)
 
-    # ===== 配置 =====
-    MODEL_PATH = "models/TD3_velodyne_best"  # 模型路径
+    # ===== 修复：正确的模型路径 =====
+    # 获取脚本所在目录的绝对路径
+    script_dir = os.path. dirname(os.path.abspath(__file__))
+
+    # 模型在 src/training/models/ 目录下
+    MODEL_PATH = os. path.join(script_dir, "src", "training", "models", "TD3_velodyne_best")
+
     NUM_EPISODES = 3                        # 测试的 Episode 数量
     MAX_STEPS = 500                         # 每个 Episode 的最大步数
     # =================
@@ -64,22 +69,38 @@ def main():
         map_size=10.0,
         laser_range=5.0,
         laser_dim=20,
-        velocity_limits=(0.5, 2.0),        # 修复后的环境配置
+        velocity_limits=(0.5, 2.0),
         time_step=0.1
     )
 
     print("创建智能体...")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch. cuda.is_available() else "cpu")
     agent = TD3Agent(state_dim=24, action_dim=2, device=device)
 
     # 加载模型（如果存在）
-    if os.path.exists(f"{MODEL_PATH}.pth"):
+    model_file = f"{MODEL_PATH}.pth"
+    if os.path. exists(model_file):
+        print(f"✓ 找到模型文件: {model_file}")
         print(f"加载模型: {MODEL_PATH}")
         agent.load(MODEL_PATH)
         print("✓ 模型加载成功")
     else:
-        print(f"⚠ 模型不存在: {MODEL_PATH}.pth")
+        print(f"⚠ 模型不存在: {model_file}")
         print("使用随机策略")
+        # 列出可能的模型文件位置
+        possible_dirs = [
+            os.path.join(script_dir, "models"),
+            os.path.join(script_dir, "src", "training", "models"),
+            "models",
+        ]
+        print("\n检查可能的模型目录:")
+        for d in possible_dirs:
+            if os. path.exists(d):
+                files = os.listdir(d)
+                pth_files = [f for f in files if f.endswith('.pth')]
+                print(f"  {d}: {pth_files if pth_files else '(无 . pth 文件)'}")
+            else:
+                print(f"  {d}: (目录不存在)")
 
     # 创建可视化器
     print("创建可视化器...")
@@ -90,22 +111,21 @@ def main():
         # 重置环境
         obs = env.reset()
 
-        # 只在第一个 Episode 后调用 visualizer.reset()
+        # 只在第一个 Episode 后调用 visualizer. reset()
         if ep > 0:
             visualizer.reset()
 
-        last_action = np.array([0.0, 0.0])  #  新增
-        state = get_state(obs, last_action=last_action)  #  修改
+        last_action = np. array([0.0, 0.0])
+        state = get_state(obs, last_action=last_action)
         done = False
         steps = 0
         episode_reward = 0
         trajectory = []
-        trajectory.append((env.x, env.y))
-        # --------------------------
+        trajectory. append((env.x, env.y))
 
         print("=" * 60)
         print(f"Episode {visualizer.episode_count + 1}")
-        print(f"初始位置: ({env.x:.2f}, {env.y:.2f})")
+        print(f"初始位置: ({env.x:.2f}, {env. y:.2f})")
         print(f"目标位置: ({env.goal_x:.2f}, {env.goal_y:.2f})")
         print(f"初始距离: {obs['robot_state'][0]:.2f}m")
         print("=" * 60)
@@ -115,14 +135,15 @@ def main():
             action_in = [(action[0] + 1) / 2, action[1]]
 
             next_obs, reward, done, info = env.step(action_in)
-            trajectory.append((env.x, env.y))
+            trajectory.append((env. x, env.y))
 
-            next_state = get_state(next_obs, last_action=action)  #  修改
+            next_state = get_state(next_obs, last_action=action)
 
             visualizer.update(obs, action_in, reward)
 
+            obs = next_obs  # 重要：更新 obs
             state = next_state
-            last_action = action  #  新增
+            last_action = action
             episode_reward += reward
             steps += 1
 
@@ -142,13 +163,10 @@ def main():
         print(f"总步数: {steps}")
         print(f"总奖励: {episode_reward:.2f}")
 
-        # --- 新增: 打印本轮轨迹 ---
+        # 打印本轮轨迹
         print("\n本轮运行轨迹 (Trajectory):")
-        # 将轨迹格式化为保留2位小数的字符串列表，方便阅读
         formatted_traj = [f"({x:.2f}, {y:.2f})" for x, y in trajectory]
         print(", ".join(formatted_traj))
-        # ------------------------
-
         print("-" * 60 + "\n")
 
         # 等待下一 Episode
