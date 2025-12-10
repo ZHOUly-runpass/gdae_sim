@@ -124,17 +124,18 @@ class TD3Trainer:
 
     def _get_state(self, obs):
         """
-        构建完整状态向量 - 与参考项目一致
-
-        状态构成:  [laser(20) + distance(1) + theta(1) + action(2)] = 24维
+        构建完整状态向量 - 添加归一化
         """
-        # 激光数据：直接使用，不归一化
-        laser_data = np.array(obs['laser'])
+        # 激光数据：归一化到 [0, 1]
+        laser_data = np.array(obs['laser']) / self.env.laser_range  # 除以 5.0
 
-        # 机器人状态
+        # 机器人状态 (距离和角度)
         robot_state = np.array(obs['robot_state'])
 
-        # 当前动作
+        # 可选：归一化距离
+        # robot_state[0] = robot_state[0] / (self.env.map_size * 1.414)  # 对角线距离
+
+        # 当前动作 (已经在 [-1, 1] 范围)
         action = np.array(obs['action'])
 
         # 拼接状态
@@ -204,6 +205,12 @@ class TD3Trainer:
         while self.total_timesteps < self.config['max_timesteps']:
 
             if done or self.episode_timesteps >= self.config['max_episode_steps']:
+                # 添加调试日志
+                if self.episode_num % 10 == 0:  # 每10个episode打印一次
+                    print(f"Episode {self.episode_num}:  "
+                          f"Steps={self.episode_timesteps}, "
+                          f"Reward={self.episode_reward:.2f}, "
+                          f"Done={done}")
                 if self.total_timesteps >= self.config['start_timesteps']:
                     train_stats = self.agent.train(
                         self.replay_buffer,
@@ -296,16 +303,16 @@ class TD3Trainer:
         success_count = 0
         collision_count = 0
 
-        for _ in range(num_episodes):
-            obs = self.env. reset()
+        for ep in range(num_episodes):
+            obs = self.env.reset()  # ✓ 正确重置
             state = self._get_state(obs)
 
-            episode_reward = 0
+            episode_reward = 0  # ✓ 每个episode重置奖励
             done = False
             steps = 0
 
             while not done and steps < self.config['max_episode_steps']:
-                action = self. agent.get_action(state, add_noise=False)
+                action = self.agent.get_action(state, add_noise=False)
                 action_in = [(action[0] + 1) / 2, action[1]]
 
                 next_obs, reward, done, info = self.env.step(action_in)

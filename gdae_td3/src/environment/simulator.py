@@ -164,13 +164,16 @@ class RobotSimulator:
             network_action_0 = action[0] * 2 - 1  # [0,1] → [-1,1]
             network_action_1 = action[1]  # 已经是 [-1,1]
 
+            # 归一化激光数据到 [0, 1] 范围
+            normalized_laser = min_laser / self.laser_range  # 除以 5.0
+
             # 障碍物惩罚函数
             r3 = lambda x: 1 - x if x < 1 else 0.0
 
             # 简单的动作奖励
             reward = (network_action_0 / 2 -
                       abs(network_action_1) / 2 -
-                      r3(min_laser) / 2)
+                      r3(normalized_laser) / 2)  # 使用归一化后的激光值
 
             return reward
 
