@@ -174,8 +174,12 @@ class RobotSimulator:
             reward = (network_action_0 / 2 -
                       abs(network_action_1) / 2 -
                       r3(normalized_laser) / 2)  # 使用归一化后的激光值
+            # 添加裁剪，防止异常值
+            reward = np.clip(reward, -10.0, 10.0)  # 限制在合理范围
 
             return reward
+
+
 
     def render(self):
         """环境可视化"""

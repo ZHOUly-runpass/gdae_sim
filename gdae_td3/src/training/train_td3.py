@@ -154,8 +154,8 @@ class TD3Trainer:
 
         # 随机障碍物附近探索策略
         if self.config['random_near_obstacle']:
-            # 注意：现在 laser 数据没有归一化，阈值需要调整
-            laser_data = state[: 20]
+            # 激光数据已归一化到 [0, 1]，阈值 0.6 表示 3. 0m
+            laser_data = state[:20]
             min_laser = min(laser_data)
 
             if (np.random.rand() > self.config['random_action_prob'] and
@@ -264,6 +264,17 @@ class TD3Trainer:
                 'Noise': f'{self.expl_noise:.3f}',
                 'Buffer':  f'{len(self.replay_buffer):,}'
             })
+            if self.total_timesteps % self.config['eval_freq'] == 0:
+                eval_reward = self.evaluate(num_episodes=10)
+                evaluations.append(eval_reward)
+
+                self.writer.add_scalar('eval/average_reward', eval_reward, self.total_timesteps)
+
+                # 添加更多监控指标
+                print(f"\n[评估] Timestep:  {self.total_timesteps:,}")
+                print(f"  Average Reward: {eval_reward:.2f}")
+                print(f"  Exploration Noise: {self.expl_noise:.3f}")
+                print(f"  Buffer Size: {len(self.replay_buffer):,}")
 
             if self.total_timesteps % self. config['eval_freq'] == 0:
                 eval_reward = self.evaluate(num_episodes=10)
@@ -341,13 +352,15 @@ class TD3Trainer:
 
 def main():
     """主函数"""
+    # 删除会覆盖改进参数的配置，或者使用改进的值
     config = {
         'max_timesteps': int(5e6),
-        'eval_freq': int(5e3),
+        # 使用改进的值
+        'eval_freq': int(2e3),  # 改为 2e3
         'save_freq': int(5e4),
         'batch_size': 256,
-        'expl_noise_start': 1.0,
-        'expl_noise_end': 0.1,
+        'expl_noise_start': 0.3,  # 改为 0.3
+        'expl_noise_end': 0.05,  # 改为 0.05
         'expl_noise_decay_steps': int(5e5),
     }
 
