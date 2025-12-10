@@ -32,8 +32,9 @@ def main():
     print("=" * 80)
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    MODEL_PATH = os.path.join(script_dir, "src", "training", "models", "TD3_velodyne_best")
-
+    MODEL_PATH = os.path.join(script_dir, "src", "training", "models", "TD3_velodyne_step_50000")
+    #  TD3_velodyne_best
+    #  TD3_velodyne_step_50000
     NUM_EPISODES = 3
     MAX_STEPS = 500
 

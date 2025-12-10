@@ -153,21 +153,24 @@ class RobotSimulator:
 
     def compute_reward(self, target, collision, action, min_laser):
         """
-        计算奖励函数 - 与参考项目一致
+        严格遵循 DRL-robot-navigation 的奖励函数
         """
         if target:
             return 100.0
         elif collision:
             return -100.0
         else:
-            # 转换回网络输出范围 [-1, 1]
-            network_action_0 = action[0] * 2 - 1
-            network_action_1 = action[1]
+            # 转换动作到网络输出范围
+            network_action_0 = action[0] * 2 - 1  # [0,1] → [-1,1]
+            network_action_1 = action[1]  # 已经是 [-1,1]
 
-            # 障碍物惩罚
+            # 障碍物惩罚函数
             r3 = lambda x: 1 - x if x < 1 else 0.0
 
-            reward = network_action_0 / 2 - abs(network_action_1) / 2 - r3(min_laser) / 2
+            # 简单的动作奖励
+            reward = (network_action_0 / 2 -
+                      abs(network_action_1) / 2 -
+                      r3(min_laser) / 2)
 
             return reward
 

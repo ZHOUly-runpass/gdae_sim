@@ -23,12 +23,14 @@ class TD3Agent:
             action_dim=2,
             max_action=1.0,
             device=None,
-            actor_lr=1e-3,
-            critic_lr=1e-3,
+            # actor_lr=1e-3,
+            # critic_lr=1e-3,
+            actor_lr =  3e-4,  # 从 1e-3 降低
+            critic_lr =  3e-4,  # 从 1e-3 降低
             gamma=0.99,
             tau=0.005,
-            policy_noise=0.2,
-            noise_clip=0.5,
+            policy_noise=0.1,  # 0.2
+            noise_clip=0.3,    # 0.5
             policy_freq=2
     ):
         """
