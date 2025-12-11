@@ -2,7 +2,7 @@ import numpy as np
 import random
 import math
 
-from . obstacles import ObstacleManager
+from .obstacles import ObstacleManager
 from .sensors import LidarSensor
 
 
@@ -38,6 +38,8 @@ class RobotSimulator:
         self.goal_reach_threshold = 0.3
         self.collision_dist = 0.35
 
+        self.prev_distance = None
+
         # 保存当前执行的动作（用于状态构建，范围 [-1, 1]）
         self.current_action = np.array([0.0, 0.0])
 
@@ -60,7 +62,7 @@ class RobotSimulator:
 
         # 重置动作
         self.current_action = np.array([0.0, 0.0])
-
+        self.prev_distance = None
         return self.get_observation()
 
     def step(self, action):
@@ -153,29 +155,39 @@ class RobotSimulator:
 
     def compute_reward(self, target, collision, action, min_laser):
         """
-        严格遵循 DRL-robot-navigation 的奖励函数
+        改进版：适合纯Python仿真
         """
         if target:
             return 100.0
         elif collision:
             return -100.0
         else:
-            # 转换动作到网络输出范围
-            network_action_0 = action[0] * 2 - 1  # [0,1] → [-1,1]
-            network_action_1 = action[1]  # 已经是 [-1,1]
+            # 计算距离
+            dx = self.goal_x - self.x
+            dy = self.goal_y - self.y
+            current_distance = np.linalg.norm([dx, dy])
 
-            # 归一化激光数据到 [0, 1] 范围
-            normalized_laser = min_laser / self.laser_range  # 除以 5.0
+            # 距离进步奖励（核心改进）
+            if self.prev_distance is not None:
+                # 靠近目标：正奖励；远离目标：负奖励
+                distance_progress = (self.prev_distance - current_distance) * 5.
+                0
+            else:
+                distance_progress = 0.0
 
-            # 障碍物惩罚函数
+            self.prev_distance = current_distance
+
+            # 原有奖励（权重降低）
+            network_action_0 = action[0] * 2 - 1
+            network_action_1 = action[1]
+            normalized_laser = min_laser / self.laser_range
             r3 = lambda x: 1 - x if x < 1 else 0.0
 
-            # 简单的动作奖励
-            reward = (network_action_0 / 2 -
-                      abs(network_action_1) / 2 -
-                      r3(normalized_laser) / 2)  # 使用归一化后的激光值
-            # 添加裁剪，防止异常值
-            reward = np.clip(reward, -10.0, 10.0)  # 限制在合理范围
+            action_reward = (network_action_0 / 4 -  # 降低权重
+                             abs(network_action_1) / 4 -
+                             r3(normalized_laser) / 2)
+
+            reward = distance_progress + action_reward
 
             return reward
 
