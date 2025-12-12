@@ -241,17 +241,19 @@ def test_reward_function():
 
     # 测试不同场景的奖励
     test_cases = [
-        # (distance, collision, action, 描述)
-        (0.2, False, [0.5, 0.0], "接近目标"),
-        (5.0, False, [0.3, 0.0], "远离目标"),
-        (2.0, False, [0.5, 0.5], "高速转向"),
-        (2.0, False, [0.1, 0.0], "缓慢前进"),
+        # (target, collision, action, min_laser, 描述)
+        (False, False, [0.5, 0.0], 5.0, "正常前进，远离障碍物"),
+        (False, False, [0.1, 0.0], 5.0, "缓慢前进"),
+        (False, False, [0.5, 0.5], 5.0, "高速转向"),
+        (False, False, [0.5, 0.0], 0.5, "靠近障碍物"),
+        (True, False, [0.5, 0.0], 5.0, "到达目标"),
+        (False, True, [0.5, 0.0], 0.2, "碰撞"),
     ]
 
     print("\n  奖励函数测试:")
-    for distance, collision, action, desc in test_cases:
-        reward = env.compute_reward(distance, collision, action)
-        print(f"    {desc}: 距离={distance:.1f}m, 动作={action} → 奖励={reward:.2f}")
+    for target, collision, action, min_laser, desc in test_cases:
+        reward = env. compute_reward(target, collision, action, min_laser)
+        print(f"    {desc}: target={target}, collision={collision}, action={action}, min_laser={min_laser:. 1f} → 奖励={reward:.2f}")
 
     print("\n✓ 奖励函数正常")
 

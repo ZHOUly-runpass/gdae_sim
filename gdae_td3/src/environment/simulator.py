@@ -43,6 +43,9 @@ class RobotSimulator:
         # 保存当前执行的动作（用于状态构建，范围 [-1, 1]）
         self.current_action = np.array([0.0, 0.0])
 
+        # 新增：用于距离进步奖励
+        self.prev_distance = None
+
     def reset(self):
         """重置环境及机器人状态"""
         self.obstacles.reset()
@@ -188,6 +191,9 @@ class RobotSimulator:
                              r3(normalized_laser) / 2)
 
             reward = distance_progress + action_reward
+
+            # 添加裁剪，防止异常值
+            reward = np.clip(reward, -10.0, 10.0)
 
             return reward
 

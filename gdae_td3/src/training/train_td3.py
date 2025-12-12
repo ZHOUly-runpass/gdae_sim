@@ -123,17 +123,12 @@ class TD3Trainer:
             torch.cuda.manual_seed(seed)
 
     def _get_state(self, obs):
-        """
-        构建完整状态向量 - 添加归一化
-        """
+        """构建完整状态向量 - 添加归一化"""
         # 激光数据：归一化到 [0, 1]
         laser_data = np.array(obs['laser']) / self.env.laser_range  # 除以 5.0
 
         # 机器人状态 (距离和角度)
         robot_state = np.array(obs['robot_state'])
-
-        # 可选：归一化距离
-        # robot_state[0] = robot_state[0] / (self.env.map_size * 1.414)  # 对角线距离
 
         # 当前动作 (已经在 [-1, 1] 范围)
         action = np.array(obs['action'])
