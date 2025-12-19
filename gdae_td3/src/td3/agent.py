@@ -208,6 +208,25 @@ class TD3Agent:
 
         return stats
 
+    def load_actor(self, actor_path):
+        """
+        加载 Actor 模型
+        Args:
+            actor_path: Actor 模型文件路径（包含扩展名 .pth）
+        """
+        checkpoint = torch.load(actor_path, map_location=self.device)
+        self.actor.load_state_dict(checkpoint)
+        print("✓ Actor 模型已加载")
+
+    def load_critic(self, critic_path):
+        """
+        加载 Critic 模型
+        Args:
+            critic_path: Critic 模型文件路径（包含扩展名 .pth）
+        """
+        checkpoint = torch.load(critic_path, map_location=self.device)
+        self.critic.load_state_dict(checkpoint)
+        print("✓ Critic 模型已加载")
     def _soft_update(self, source, target, tau):
         """
         软更新目标网络
